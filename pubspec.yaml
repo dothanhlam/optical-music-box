@@ -1,0 +1,29 @@
+name: optical_music_box
+description: "Optical Music Box – scan black dots on paper and play pentatonic notes!"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  camera: ^0.11.0+2
+  audioplayers: ^6.1.0
+  permission_handler: ^11.3.1
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sounds/note_c4.wav
+    - assets/sounds/note_d4.wav
+    - assets/sounds/note_e4.wav
+    - assets/sounds/note_g4.wav
+    - assets/sounds/note_a4.wav

@@ -1,0 +1,57 @@
+<svg width="210mm" height="297mm" viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="210" height="297" fill="white" />
+  
+  <!-- Helper Text -->
+  <text x="105" y="10" font-family="Arial" font-size="4" text-anchor="middle" fill="grey">
+    Optical Music Box - A4 Print Template (Scale 100%)
+  </text>
+
+  <!-- Generate 4 Strips -->
+  <g transform="translate(5, 20)">
+    <!-- Strip 1 -->
+    <g transform="translate(0, 0)">
+      <rect width="45" height="250" fill="none" stroke="#EEEEEE" stroke-width="0.2" />
+      <line x1="0" y1="0" x2="0" y2="250" stroke="black" stroke-dasharray="2,2" stroke-width="0.1" />
+      <line x1="45" y1="0" x2="45" y2="250" stroke="black" stroke-dasharray="2,2" stroke-width="0.1" />
+      <!-- 5 Strings -->
+      <line x1="5" y1="50" x2="40" y2="50" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="90" x2="40" y2="90" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="130" x2="40" y2="130" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="170" x2="40" y2="170" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="210" x2="40" y2="210" stroke="#CCCCCC" stroke-width="0.5" />
+    </g>
+
+    <!-- Strip 2 -->
+    <g transform="translate(52, 0)">
+      <rect width="45" height="250" fill="none" stroke="#EEEEEE" stroke-width="0.2" />
+      <line x1="0" y1="0" x2="0" y2="250" stroke="black" stroke-dasharray="2,2" stroke-width="0.1" />
+      <line x1="45" y1="0" x2="45" y2="250" stroke="black" stroke-dasharray="2,2" stroke-width="0.1" />
+      <line x1="5" y1="50" x2="40" y2="50" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="90" x2="40" y2="90" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="130" x2="40" y2="130" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="170" x2="40" y2="170" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="210" x2="40" y2="210" stroke="#CCCCCC" stroke-width="0.5" />
+    </g>
+
+    <!-- Strip 3 -->
+    <g transform="translate(104, 0)">
+      <rect width="45" height="250" fill="none" stroke="#EEEEEE" stroke-width="0.2" />
+      <line x1="5" y1="50" x2="40" y2="50" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="90" x2="40" y2="90" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="130" x2="40" y2="130" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="170" x2="40" y2="170" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="210" x2="40" y2="210" stroke="#CCCCCC" stroke-width="0.5" />
+    </g>
+
+    <!-- Strip 4 -->
+    <g transform="translate(156, 0)">
+      <rect width="45" height="250" fill="none" stroke="#EEEEEE" stroke-width="0.2" />
+      <line x1="5" y1="50" x2="40" y2="50" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="90" x2="40" y2="90" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="130" x2="40" y2="130" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="170" x2="40" y2="170" stroke="#CCCCCC" stroke-width="0.5" />
+      <line x1="5" y1="210" x2="40" y2="210" stroke="#CCCCCC" stroke-width="0.5" />
+    </g>
+  </g>
+</svg>
