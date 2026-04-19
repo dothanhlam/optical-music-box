@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../engine/dot_detector.dart';
 
-/// Draws the translucent playhead strip and a thin scan-line per zone.
+/// Draws the translucent playhead strip, scan-lines, and luminance gauges.
 class PlayheadPainter extends CustomPainter {
   final List<bool> activeZones;
+  final List<double> luminanceLevels;
+  final double spacing;
+  final double offset;
+  final double threshold;
+  final double playheadYOffset;
 
   static const List<Color> zoneColors = [
     Color(0xFFFF5252), // zone 0 – red    (A4)
@@ -15,68 +20,90 @@ class PlayheadPainter extends CustomPainter {
 
   static const List<String> noteNames = ['A', 'G', 'E', 'D', 'C'];
 
-  const PlayheadPainter({required this.activeZones});
+  const PlayheadPainter({
+    required this.activeZones,
+    required this.luminanceLevels,
+    required this.spacing,
+    required this.offset,
+    required this.threshold,
+    required this.playheadYOffset,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    const stripW = 70.0;
+    final cy = size.height * playheadYOffset;
 
-    // ── Semi-transparent playhead rectangle ──────────────────────────────
-    final stripRect = Rect.fromLTWH(cx - stripW / 2, 0, stripW, size.height);
-
+    // ── Horizontal Playhead line ───────────────────────────────────────────
+    final stripRect = Rect.fromLTWH(0, cy - 40, size.width, 80);
     canvas.drawRect(
       stripRect,
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.06)
+        ..color = Colors.white.withValues(alpha: 0.04)
         ..style = PaintingStyle.fill,
     );
 
-    // ── Border lines ──────────────────────────────────────────────────────
-    final borderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.20)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawRect(stripRect, borderPaint);
+    // The sharp scanning line representing the "Comb"
+    canvas.drawLine(
+      Offset(0, cy),
+      Offset(size.width, cy),
+      Paint()
+        ..color = Colors.redAccent.withValues(alpha: 0.8)
+        ..strokeWidth = 2.0,
+    );
 
-    // ── Scan line per zone ────────────────────────────────────────────────
-    final zoneCenters = DotDetector.computeZoneCenters(size.height);
+    final zoneCenters = DotDetector.computeZoneCenters(size.width, spacing, offset);
+    
     for (int i = 0; i < 5; i++) {
-      final y = zoneCenters[i];
+      final x = zoneCenters[i];
       final color = zoneColors[i];
       final isActive = activeZones[i];
+      final luminance = luminanceLevels[i];
+
+      // Vertical intersecting scan line for each string (lane)
       canvas.drawLine(
-        Offset(cx - stripW / 2, y),
-        Offset(cx + stripW / 2, y),
+        Offset(x, cy - 60),
+        Offset(x, cy + 60),
         Paint()
           ..color = isActive
-              ? color.withValues(alpha: 0.9)
-              : color.withValues(alpha: 0.25)
-          ..strokeWidth = isActive ? 2.5 : 1.0,
+              ? color.withValues(alpha: 0.8)
+              : color.withValues(alpha: 0.2)
+          ..strokeWidth = isActive ? 2.0 : 1.0,
       );
-    }
 
-    // ── Top & bottom edge accent ──────────────────────────────────────────
-    const accentH = 24.0;
-    final topRect = Rect.fromLTWH(cx - stripW / 2, 0, stripW, accentH);
-    final botRect = Rect.fromLTWH(
-        cx - stripW / 2, size.height - accentH, stripW, accentH);
+      // Luminance Gauge (small horizontal bar)
+      const gaugeW = 34.0;
+      const gaugeH = 4.0;
+      final gaugeRect = Rect.fromCenter(
+        center: Offset(x, cy - 42),
+        width: gaugeW,
+        height: gaugeH,
+      );
 
-    for (final rect in [topRect, botRect]) {
-      canvas.drawRect(
-        rect,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.12)
-          ..style = PaintingStyle.fill,
+      // Gauge Background
+      canvas.drawRect(gaugeRect, Paint()..color = Colors.white24);
+
+      // Gauge Fill level (width based on luminance drops)
+      final fillLevel = (1.0 - luminance).clamp(0.0, 1.0);
+      final fillRect = Rect.fromLTWH(
+        gaugeRect.left,
+        gaugeRect.top,
+        gaugeRect.width * fillLevel,
+        gaugeH,
+      );
+      canvas.drawRect(fillRect, Paint()..color = color.withValues(alpha: 0.8));
+
+      // Gauge Threshold line
+      final thresholdX = gaugeRect.left + (gaugeRect.width * (1.0 - threshold));
+      canvas.drawLine(
+        Offset(thresholdX, gaugeRect.top - 2),
+        Offset(thresholdX, gaugeRect.bottom + 2),
+        Paint()..color = Colors.white..strokeWidth = 1.5,
       );
     }
   }
 
   @override
-  bool shouldRepaint(PlayheadPainter old) {
-    for (int i = 0; i < 5; i++) {
-      if (old.activeZones[i] != activeZones[i]) return true;
-    }
-    return false;
+  bool shouldRepaint(covariant PlayheadPainter oldDelegate) {
+    return true;
   }
 }

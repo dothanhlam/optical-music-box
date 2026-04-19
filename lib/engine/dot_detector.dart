@@ -1,49 +1,92 @@
 import 'dart:math' as math;
 import 'package:camera/camera.dart';
 
-/// Samples the YUV420 Y-plane (luminance) for 5 equally-spaced vertical
-/// zones centred on the playhead strip. Returns a List[bool] where
-/// true == "dark dot detected in that zone."
+class DetectionResult {
+  final List<bool> detected;
+  final List<double> luminance; // 0.0 (dark) to 1.0 (light)
+  DetectionResult(this.detected, this.luminance);
+}
+
+/// Samples the YUV420 Y-plane (luminance) for 5 vertical zones.
+/// Supports dynamic spacing and positioning to align with physical strips.
 class DotDetector {
-  // ── Tuning ────────────────────────────────────────────────────────────────
-  static const int _luminanceThreshold = 85; // 0-255; below = black dot
-  static const int _sampleRegionPx = 24; // square region side (px)
-  static const double _playheadFraction = 0.5; // 0-1 horizontal position
+  static const int _sampleRegionPx = 24; 
 
-  // ── Public API ────────────────────────────────────────────────────────────
-
-  /// Returns the Y-centre pixel for each of the 5 zones given the screen/
-  /// image height.  Used by the UI to position circles at the same spots.
-  static List<double> computeZoneCenters(double height) {
-    final band = height / 5;
-    return List.generate(5, (i) => band * i + band / 2);
+  /// Returns the center pixel for each of the 5 zones along an axis of [length].
+  /// [spacing] 0.1 to 1.0 (how much of the axis to occupy)
+  /// [offset] -1.0 to 1.0 (shift from center)
+  static List<double> computeZoneCenters(double length, double spacing, double offset) {
+    final totalContentLength = length * spacing;
+    final centerRelative = (length / 2) + ((length / 2) * offset);
+    final startVal = centerRelative - (totalContentLength / 2);
+    final step = totalContentLength / 5;
+    
+    return List.generate(5, (i) {
+      return (startVal + step * i + step / 2).clamp(0.0, length);
+    });
   }
 
-  /// Analyse one [CameraImage] and return 5 bool flags.
-  List<bool> detect(CameraImage image) {
+  DetectionResult detect(
+    CameraImage image, {
+    required double spacing,
+    required double offset,
+    required double threshold,
+    required int sensorOrientation,
+    required double playheadFraction,
+  }) {
     final width = image.width;
     final height = image.height;
     final yPlane = image.planes[0];
     final yBytes = yPlane.bytes;
     final rowStride = yPlane.bytesPerRow;
 
-    // Horizontal centre of the playhead in image coordinates
-    final centreX = (width * _playheadFraction).round();
+    final detected = <bool>[];
+    final luminanceLevels = <double>[];
+
+    // Mobile sensors are typically landscape (width > height).
+    // Portrait UI X-axis corresponds to the sensor's short dimension.
+    // Portrait UI Y-axis corresponds to the sensor's long dimension.
+    bool appliesRotation = width > height;
+    final longAxis = appliesRotation ? width : height;
+    final shortAxis = appliesRotation ? height : width;
+
+    // Centers span across the UI X-axis (short axis of the sensor)
+    final centers = computeZoneCenters(shortAxis.toDouble(), spacing, offset);
+    
+    // Playhead is anchored along the UI Y-axis (long axis of the sensor)
+    final longAxisCenter = (longAxis * playheadFraction).round();
+
     final half = _sampleRegionPx ~/ 2;
 
-    final results = <bool>[];
-
     for (int zone = 0; zone < 5; zone++) {
-      // Vertical centre of this zone in image coordinates
-      final centreY = ((height / 5) * zone + (height / 5) / 2).round();
+      // Rotate 90 CW: X-axis on UI maps to inverted row in sensor.
+      int checkZone = zone;
+      if (appliesRotation && sensorOrientation == 90) {
+        checkZone = 4 - zone;
+      }
+
+      final shortAxisZoneCenter = centers[checkZone].round();
+
+      final longStart = math.max(0, longAxisCenter - half);
+      final longEnd = math.min(longAxis - 1, longAxisCenter + half);
+      final shortStart = math.max(0, shortAxisZoneCenter - half);
+      final shortEnd = math.min(shortAxis - 1, shortAxisZoneCenter + half);
+
+      final int yStart, yEnd, xStart, xEnd;
+      if (appliesRotation) {
+        xStart = longStart; // col
+        xEnd = longEnd;
+        yStart = shortStart; // row
+        yEnd = shortEnd;
+      } else {
+        yStart = longStart;
+        yEnd = longEnd;
+        xStart = shortStart;
+        xEnd = shortEnd;
+      }
 
       int sum = 0;
       int count = 0;
-
-      final yStart = math.max(0, centreY - half);
-      final yEnd = math.min(height - 1, centreY + half);
-      final xStart = math.max(0, centreX - half);
-      final xEnd = math.min(width - 1, centreX + half);
 
       for (int row = yStart; row <= yEnd; row++) {
         for (int col = xStart; col <= xEnd; col++) {
@@ -55,10 +98,13 @@ class DotDetector {
         }
       }
 
-      final avgLuminance = count > 0 ? sum ~/ count : 255;
-      results.add(avgLuminance < _luminanceThreshold);
+      final avgLuminanceValue = count > 0 ? sum / count : 255.0;
+      final normalizedLuminance = avgLuminanceValue / 255.0;
+      
+      luminanceLevels.add(normalizedLuminance);
+      detected.add(normalizedLuminance < threshold);
     }
 
-    return results;
+    return DetectionResult(detected, luminanceLevels);
   }
 }

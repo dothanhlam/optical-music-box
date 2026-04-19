@@ -1,0 +1,58 @@
+<svg width="210mm" height="297mm" viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="210" height="297" fill="white" />
+
+  <text x="105" y="10" font-family="Arial" font-size="5" text-anchor="middle" fill="#333">Twinkle_Twinkle - Page 1</text>
+
+  <g transform="translate(10, 20)">
+    <text x="45" y="-3" font-family="Arial" font-size="4" text-anchor="middle" font-weight="bold">Strip 1</text>
+    <rect width="90" height="260" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-dasharray="2,3" />
+    <line x1="15" y1="0" x2="15" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="15" y="265" font-family="Arial" font-size="3" text-anchor="middle">A</text>
+    <line x1="30" y1="0" x2="30" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="30" y="265" font-family="Arial" font-size="3" text-anchor="middle">G</text>
+    <line x1="45" y1="0" x2="45" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="45" y="265" font-family="Arial" font-size="3" text-anchor="middle">E</text>
+    <line x1="60" y1="0" x2="60" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="60" y="265" font-family="Arial" font-size="3" text-anchor="middle">D</text>
+    <line x1="75" y1="0" x2="75" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="75" y="265" font-family="Arial" font-size="3" text-anchor="middle">C</text>
+    <circle cx="75" cy="250" r="6" fill="black" />
+    <circle cx="75" cy="230" r="6" fill="black" />
+    <circle cx="30" cy="210" r="6" fill="black" />
+    <circle cx="30" cy="190" r="6" fill="black" />
+    <circle cx="15" cy="170" r="6" fill="black" />
+    <circle cx="15" cy="150" r="6" fill="black" />
+    <circle cx="30" cy="130" r="6" fill="black" />
+    <circle cx="45" cy="90" r="6" fill="black" />
+    <circle cx="45" cy="70" r="6" fill="black" />
+    <circle cx="45" cy="50" r="6" fill="black" />
+    <circle cx="45" cy="30" r="6" fill="black" />
+  </g>
+
+  <g transform="translate(110, 20)">
+    <text x="45" y="-3" font-family="Arial" font-size="4" text-anchor="middle" font-weight="bold">Strip 2</text>
+    <rect width="90" height="260" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-dasharray="2,3" />
+    <line x1="15" y1="0" x2="15" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="15" y="265" font-family="Arial" font-size="3" text-anchor="middle">A</text>
+    <line x1="30" y1="0" x2="30" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="30" y="265" font-family="Arial" font-size="3" text-anchor="middle">G</text>
+    <line x1="45" y1="0" x2="45" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="45" y="265" font-family="Arial" font-size="3" text-anchor="middle">E</text>
+    <line x1="60" y1="0" x2="60" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="60" y="265" font-family="Arial" font-size="3" text-anchor="middle">D</text>
+    <line x1="75" y1="0" x2="75" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <text x="75" y="265" font-family="Arial" font-size="3" text-anchor="middle">C</text>
+    <circle cx="60" cy="250" r="6" fill="black" />
+    <circle cx="60" cy="230" r="6" fill="black" />
+    <circle cx="75" cy="210" r="6" fill="black" />
+    <circle cx="30" cy="170" r="6" fill="black" />
+    <circle cx="30" cy="150" r="6" fill="black" />
+    <circle cx="45" cy="130" r="6" fill="black" />
+    <circle cx="45" cy="110" r="6" fill="black" />
+    <circle cx="45" cy="90" r="6" fill="black" />
+    <circle cx="45" cy="70" r="6" fill="black" />
+    <circle cx="60" cy="50" r="6" fill="black" />
+  </g>
+
+</svg>

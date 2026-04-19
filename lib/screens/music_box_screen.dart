@@ -20,19 +20,26 @@ class _MusicBoxScreenState extends State<MusicBoxScreen>
   CameraController? _controller;
   bool _isInitialized = false;
   bool _permissionGranted = false;
+  bool _showTuning = false;
 
   late final AudioManager _audioManager;
   late final NoteTrigger _noteTrigger;
   late final DotDetector _dotDetector;
 
-  // One AnimationController per zone for the glow/pulse effect
+  // ── Tuning State ──────────────────────────────────────────────────────────
+  double _threshold = 0.35; // 0.0 (black) to 1.0 (white)
+  double _spacing = 0.7;   // 0.1 to 1.0
+  double _offset = 0.0;    // -1.0 to 1.0
+  double _playheadYOffset = 0.5; // 0.1 to 0.9
+
+  // ── Pulse Animations ──────────────────────────────────────────────────────
   late List<AnimationController> _pulseControllers;
   late List<Animation<double>> _pulseAnimations;
 
-  // Current active zone flags (for painter)
+  // Current detection results
   List<bool> _activeZones = List.filled(5, false);
+  List<double> _luminanceLevels = List.filled(5, 1.0);
 
-  // Throttle: process at most 1 frame per 33ms (≈30fps analysis)
   DateTime _lastFrameTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
@@ -42,15 +49,14 @@ class _MusicBoxScreenState extends State<MusicBoxScreen>
     _dotDetector = DotDetector();
     _noteTrigger = NoteTrigger(audioManager: _audioManager);
 
-    // Set up 5 pulse animations
     _pulseControllers = List.generate(5, (i) {
       return AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 220),
+        duration: const Duration(milliseconds: 200),
       );
     });
     _pulseAnimations = _pulseControllers.map((c) {
-      return Tween<double>(begin: 1.0, end: 1.55).animate(
+      return Tween<double>(begin: 1.0, end: 1.5).animate(
         CurvedAnimation(parent: c, curve: Curves.easeOut),
       );
     }).toList();
@@ -94,18 +100,26 @@ class _MusicBoxScreenState extends State<MusicBoxScreen>
 
   void _onFrameReceived(CameraImage image) {
     final now = DateTime.now();
-    if (now.difference(_lastFrameTime).inMilliseconds < 33) return;
+    if (now.difference(_lastFrameTime).inMilliseconds < 40) return; // ~25fps analysis
     _lastFrameTime = now;
 
-    final detected = _dotDetector.detect(image);
-    final triggered = _noteTrigger.process(detected);
+    final result = _dotDetector.detect(
+      image,
+      threshold: _threshold,
+      spacing: _spacing,
+      offset: _offset,
+      sensorOrientation: _controller!.description.sensorOrientation,
+      playheadFraction: _playheadYOffset,
+    );
 
-    // Only rebuild UI if something changed
-    if (!_listEqual(detected, _activeZones)) {
-      setState(() => _activeZones = detected);
-    }
+    final triggered = _noteTrigger.process(result.detected);
 
-    // Fire pulse animations for newly triggered zones
+    // Update UI state
+    setState(() {
+      _activeZones = result.detected;
+      _luminanceLevels = result.luminance;
+    });
+
     for (int i = 0; i < 5; i++) {
       if (triggered[i]) {
         _pulseControllers[i].forward(from: 0.0);
@@ -113,18 +127,12 @@ class _MusicBoxScreenState extends State<MusicBoxScreen>
     }
   }
 
-  bool _listEqual(List<bool> a, List<bool> b) {
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
   @override
   void dispose() {
     for (final c in _pulseControllers) {
       c.dispose();
     }
+
     _controller?.stopImageStream();
     _controller?.dispose();
     _audioManager.dispose();
@@ -140,99 +148,93 @@ class _MusicBoxScreenState extends State<MusicBoxScreen>
   }
 
   Widget _buildBody() {
-    if (!_permissionGranted) {
-      return _buildPermissionDenied();
-    }
-    if (!_isInitialized || _controller == null) {
-      return _buildLoading();
-    }
+    if (!_permissionGranted) return _buildPermissionDenied();
+    if (!_isInitialized || _controller == null) return _buildLoading();
+
+    final aspect = _controller!.value.aspectRatio;
+    // CameraPreview defaults to landscape ratio on some devices. 
+    // We force a portrait aspect ratio for the container to avoid stretching.
+    final portraitAspect = aspect > 1 ? 1 / aspect : aspect;
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        _buildCameraPreview(),
-        _buildPlayheadOverlay(),
-        _buildSensorZoneOverlay(),
-        _buildHeader(),
-      ],
-    );
-  }
-
-  Widget _buildCameraPreview() {
-    final size = MediaQuery.of(context).size;
-    final previewAspect = _controller!.value.aspectRatio;
-    return OverflowBox(
-      maxWidth: size.width,
-      maxHeight: size.height,
-      child: FittedBox(
-        fit: BoxFit.cover,
-        child: SizedBox(
-          width: size.width,
-          height: size.width / previewAspect,
-          child: CameraPreview(_controller!),
+        Center(
+          child: AspectRatio(
+            aspectRatio: portraitAspect,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CameraPreview(_controller!),
+                _buildPlayheadOverlay(),
+                _buildSensorHighlights(),
+              ],
+            ),
+          ),
         ),
-      ),
+        _buildUI(),
+      ],
     );
   }
 
   Widget _buildPlayheadOverlay() {
     return CustomPaint(
-      painter: PlayheadPainter(activeZones: _activeZones),
+      painter: PlayheadPainter(
+        activeZones: _activeZones,
+        luminanceLevels: _luminanceLevels,
+        spacing: _spacing,
+        offset: _offset,
+        threshold: _threshold,
+        playheadYOffset: _playheadYOffset,
+      ),
     );
   }
 
-  Widget _buildSensorZoneOverlay() {
+  Widget _buildSensorHighlights() {
     return LayoutBuilder(builder: (context, constraints) {
-      final playheadX = constraints.maxWidth / 2;
-      const stripWidth = 70.0;
-      final zonePositions =
-          DotDetector.computeZoneCenters(constraints.maxHeight);
+      final playheadY = constraints.maxHeight * _playheadYOffset;
+      final zonePositions = DotDetector.computeZoneCenters(
+        constraints.maxWidth,
+        _spacing,
+        _offset,
+      );
 
       return Stack(
         children: List.generate(5, (i) {
           final color = PlayheadPainter.zoneColors[i];
+          final isActive = _activeZones[i];
+          
           return AnimatedBuilder(
             animation: _pulseAnimations[i],
             builder: (context, child) {
               final scale = _pulseAnimations[i].value;
-              final isActive = _activeZones[i];
               return Positioned(
-                left: playheadX - stripWidth / 2 - 2,
-                top: zonePositions[i] - 24,
+                left: zonePositions[i] - 21,
+                top: playheadY - 21,
                 child: Transform.scale(
                   scale: scale,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 80),
-                    width: 48,
-                    height: 48,
+                  child: Container(
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isActive
-                          ? color.withValues(alpha: 0.92)
-                          : color.withValues(alpha: 0.35),
-                      boxShadow: isActive
-                          ? [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.85),
-                                blurRadius: 22,
-                                spreadRadius: 8,
-                              ),
-                            ]
-                          : [],
+                      color: isActive ? color.withValues(alpha: 0.8) : Colors.transparent,
+                      boxShadow: isActive ? [
+                        BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 20, spreadRadius: 6),
+                      ] : [],
                       border: Border.all(
-                        color: color.withValues(alpha: 0.8),
-                        width: 2.5,
+                        color: isActive ? color : color.withValues(alpha: 0.3),
+                        width: isActive ? 3 : 1,
                       ),
                     ),
                     child: Center(
-                      child: AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 80),
+                      child: Text(
+                        PlayheadPainter.noteNames[i],
                         style: TextStyle(
-                          fontSize: isActive ? 18 : 14,
-                          fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: isActive ? 16 : 12,
                         ),
-                        child: Text(PlayheadPainter.noteNames[i]),
                       ),
                     ),
                   ),
@@ -245,34 +247,36 @@ class _MusicBoxScreenState extends State<MusicBoxScreen>
     });
   }
 
+  Widget _buildUI() {
+    return Stack(
+      children: [
+        _buildHeader(),
+        _buildTuningButton(),
+        if (_showTuning) _buildTuningTray(),
+      ],
+    );
+  }
+
   Widget _buildHeader() {
     return SafeArea(
       child: Align(
         alignment: Alignment.topCenter,
         child: Container(
-          margin: const EdgeInsets.only(top: 12),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          margin: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-            ),
+            color: Colors.black54,
+            borderRadius: BorderRadius.circular(40),
+            border: Border.all(color: Colors.white12),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.music_note_rounded, color: Colors.amber, size: 20),
-              SizedBox(width: 6),
+              Icon(Icons.music_note, color: Colors.amber, size: 20),
+              SizedBox(width: 8),
               Text(
                 'Optical Music Box',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 17,
-                  letterSpacing: 0.4,
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ],
           ),
@@ -281,45 +285,72 @@ class _MusicBoxScreenState extends State<MusicBoxScreen>
     );
   }
 
-  Widget _buildLoading() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(strokeWidth: 2.5),
-          SizedBox(height: 16),
-          Text(
-            'Starting camera…',
-            style: TextStyle(color: Colors.white70, fontSize: 15),
-          ),
-        ],
+  Widget _buildTuningButton() {
+    return Positioned(
+      bottom: 24,
+      right: 24,
+      child: FloatingActionButton(
+        onPressed: () => setState(() => _showTuning = !_showTuning),
+        backgroundColor: Colors.white24,
+        child: Icon(_showTuning ? Icons.close : Icons.tune, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildPermissionDenied() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+  Widget _buildTuningTray() {
+    return Align(
+      alignment: Alignment.bottomLeft,
+      child: Container(
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
+        width: 280,
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white12),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.camera_alt_rounded,
-                size: 64, color: Colors.white38),
-            const SizedBox(height: 24),
-            const Text(
-              'Camera access is needed\nto detect the dots.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontSize: 17),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _requestPermissionAndStartCamera,
-              icon: const Icon(Icons.lock_open_rounded),
-              label: const Text('Grant Permission'),
-            ),
+            const Text('Tuning Controls', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            _buildSlider('Sensitivity', _threshold, (v) => setState(() => _threshold = v)),
+            _buildSlider('Spacing', _spacing, (v) => setState(() => _spacing = v)),
+            _buildSlider('Horizontal Pos', _offset, (v) => setState(() => _offset = v), min: -1, max: 1),
+            _buildSlider('Playhead Height', _playheadYOffset, (v) => setState(() => _playheadYOffset = v), min: 0.1, max: 0.9),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSlider(String label, double val, ValueChanged<double> onChanged, {double min = 0, double max = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 2,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+          ),
+          child: Slider(value: val, min: min, max: max, onChanged: onChanged),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoading() {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  Widget _buildPermissionDenied() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: _requestPermissionAndStartCamera,
+        child: const Text('Grant Camera Permission'),
       ),
     );
   }

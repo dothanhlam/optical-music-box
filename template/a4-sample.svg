@@ -1,0 +1,71 @@
+<svg width="210mm" height="297mm" viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="210" height="297" fill="white" />
+  
+  <text x="105" y="10" font-family="Arial" font-size="5" text-anchor="middle" fill="#333">
+    Optical Music Box: A4 Template (Pentatonic: A G E D C)
+  </text>
+
+  <!-- Strip 1: Twinkle Twinkle Little Star -->
+  <!-- Wider Strip: 90mm width. Allows much easier tracking. -->
+  <g transform="translate(10, 20)">
+    <text x="45" y="-3" font-family="Arial" font-size="4" text-anchor="middle" font-weight="bold">Song: Twinkle Twinkle</text>
+    
+    <!-- Cut lines -->
+    <rect width="90" height="260" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-dasharray="2,3" />
+    
+    <!-- 5 Vertical Lanes (Strings) -->
+    <!-- From Left to Right: String 1(A), 2(G), 3(E), 4(D), 5(C) -->
+    <line x1="15" y1="0" x2="15" y2="260" stroke="#DDDDDD" stroke-width="0.3" /> <!-- A -->
+    <line x1="30" y1="0" x2="30" y2="260" stroke="#DDDDDD" stroke-width="0.3" /> <!-- G -->
+    <line x1="45" y1="0" x2="45" y2="260" stroke="#DDDDDD" stroke-width="0.3" /> <!-- E -->
+    <line x1="60" y1="0" x2="60" y2="260" stroke="#DDDDDD" stroke-width="0.3" /> <!-- D -->
+    <line x1="75" y1="0" x2="75" y2="260" stroke="#DDDDDD" stroke-width="0.3" /> <!-- C -->
+
+    <!-- Lane Labels (Small hints at bottom) -->
+    <text x="15" y="265" font-family="Arial" font-size="3" text-anchor="middle">A</text>
+    <text x="30" y="265" font-family="Arial" font-size="3" text-anchor="middle">G</text>
+    <text x="45" y="265" font-family="Arial" font-size="3" text-anchor="middle">E</text>
+    <text x="60" y="265" font-family="Arial" font-size="3" text-anchor="middle">D</text>
+    <text x="75" y="265" font-family="Arial" font-size="3" text-anchor="middle">C</text>
+
+    <!-- Twinkle Sequence (Bottom to Top) -->
+    <!-- Notes scaled up: r=6 -->
+    <!-- Twin-kle (C-C) -->
+    <circle cx="75" cy="245" r="6" fill="black" />
+    <circle cx="75" cy="225" r="6" fill="black" />
+    <!-- twin-kle (G-G) -->
+    <circle cx="30" cy="205" r="6" fill="black" />
+    <circle cx="30" cy="185" r="6" fill="black" />
+    <!-- lit-tle (A-A) -->
+    <circle cx="15" cy="165" r="6" fill="black" />
+    <circle cx="15" cy="145" r="6" fill="black" />
+    <!-- star (G) -->
+    <circle cx="30" cy="120" r="6" fill="black" />
+
+    <!-- how I won-der (E-E D-D) -->
+    <circle cx="45" cy="95" r="6" fill="black" />
+    <circle cx="45" cy="75" r="6" fill="black" />
+    <circle cx="60" cy="55" r="6" fill="black" />
+    <circle cx="60" cy="35" r="6" fill="black" />
+    <!-- what you are (C) -->
+    <circle cx="75" cy="10" r="6" fill="black" />
+  </g>
+
+  <!-- Strip 2: Blank Template -->
+  <g transform="translate(110, 20)">
+    <text x="45" y="-3" font-family="Arial" font-size="4" text-anchor="middle">Blank Strip</text>
+    <rect width="90" height="260" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-dasharray="2,3" />
+    <line x1="15" y1="0" x2="15" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <line x1="30" y1="0" x2="30" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <line x1="45" y1="0" x2="45" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <line x1="60" y1="0" x2="60" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    <line x1="75" y1="0" x2="75" y2="260" stroke="#DDDDDD" stroke-width="0.3" />
+    
+    <text x="15" y="265" font-family="Arial" font-size="3" text-anchor="middle">A</text>
+    <text x="30" y="265" font-family="Arial" font-size="3" text-anchor="middle">G</text>
+    <text x="45" y="265" font-family="Arial" font-size="3" text-anchor="middle">E</text>
+    <text x="60" y="265" font-family="Arial" font-size="3" text-anchor="middle">D</text>
+    <text x="75" y="265" font-family="Arial" font-size="3" text-anchor="middle">C</text>
+  </g>
+</svg>
